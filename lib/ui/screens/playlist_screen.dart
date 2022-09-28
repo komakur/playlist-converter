@@ -44,15 +44,30 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               ),
               Align(
                 alignment: Alignment.bottomLeft,
-                child: Container(
-                  color: Colors.black,
-                  child: Text(
-                    widget.playlist.title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30.0),
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      color: Colors.black,
+                      child: Text(
+                        widget.playlist.title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30.0),
+                      ),
+                    ),
+                    Container(
+                      color: Colors.black,
+                      child: Text(
+                        widget.playlist.description,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.normal,
+                            fontSize: 20.0),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ]),

@@ -65,7 +65,7 @@ class PlaylistParser {
         .contains('Listen on Spotify')) {
       description =
           findContentByMetaName(doc: doc, name: 'description', isSongs: false)
-              .replaceRange(0, 17, '');
+              .replaceRange(0, 18, '');
     } else {
       description =
           findContentByMetaName(doc: doc, name: 'description', isSongs: false);
