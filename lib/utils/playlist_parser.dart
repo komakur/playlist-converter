@@ -5,31 +5,55 @@ import 'package:parse_playlist/models/playlist.dart';
 import 'package:parse_playlist/models/song.dart';
 import 'package:parse_playlist/network/network.dart';
 
-class PlaylistParser {
+abstract class PlaylistParser {
   //getting Document from url
   static Future<Document> getHTMLDocFromPage({required String uri}) async {
     final response = await Network.getResponse(uri: uri);
     if (response.statusCode == 200) {
       final doc = parse(response.body);
+
       return doc;
     } else {
       throw Exception('Failed To get Document');
     }
   }
 
-  //get specific meta content from specific document of specific property
-  static String findContentByMetaProperty(
-      {required Document doc, required String property}) {
-    return doc
-        .getElementsByTagName('head')
-        .first
-        .getElementsByTagName('meta')
-        .firstWhere((element) => element.attributes['property'] == property)
-        .attributes['content']!;
+  // get playlist songs urls
+  static List<String> _getPlaylistSongsUrls({required Document doc}) {
+    // main div for all songs
+    final songsDivs = doc.body!
+        .querySelector('#main')!
+        .children[0]
+        .children[0]
+        .children[0]
+        .children[0]
+        .children[0]
+        .children[2]
+        .children[0]
+        .children[0]
+        .children[1]
+        .children;
+
+    final List<String> songsUrls = songsDivs
+        .map((songDiv) => songDiv.children[0].children[1].children[0]
+            .children[0].children[0].children[0].attributes['href']!)
+        .toList();
+
+    return songsUrls;
   }
 
+  //get specific meta content from specific document of specific property
+  static String _findContentByMetaProperty(
+          {required Document doc, required String property}) =>
+      doc
+          .getElementsByTagName('head')
+          .first
+          .getElementsByTagName('meta')
+          .firstWhere((element) => element.attributes['property'] == property)
+          .attributes['content']!;
+
 //get specific meta content from specific document of specific name
-  static dynamic findContentByMetaName({
+  static dynamic _findContentByMetaName({
     required Document doc,
     required String name,
     bool isSongs = false,
@@ -56,59 +80,59 @@ class PlaylistParser {
     }
   }
 
-  //convert document fo playlist
-  static Future<Playlist> toPlayList(Document doc) async {
-    final title = findContentByMetaProperty(doc: doc, property: 'og:title');
-    String description = '';
+  //parse document to album
+  static Future<Album> albumFromDocument(Document doc) async {
+    final title = _findContentByMetaProperty(doc: doc, property: 'og:title');
+    return Album(title: title);
+  }
 
-    if (findContentByMetaName(doc: doc, name: 'description')
-        .contains('Listen on Spotify')) {
-      description =
-          findContentByMetaName(doc: doc, name: 'description', isSongs: false)
-              .replaceRange(0, 18, '');
-    } else {
-      description =
-          findContentByMetaName(doc: doc, name: 'description', isSongs: false);
+  //convert document to playlist
+  static Future<Playlist> playlistFromDocument(Document doc) async {
+    try {
+      final title = _findContentByMetaProperty(doc: doc, property: 'og:title');
+      String description = '';
+
+      if (_findContentByMetaName(doc: doc, name: 'description')
+          .contains('Listen on Spotify')) {
+        description = _findContentByMetaName(
+                doc: doc, name: 'description', isSongs: false)
+            .replaceRange(0, 18, '');
+      } else {
+        description = _findContentByMetaName(
+            doc: doc, name: 'description', isSongs: false);
+      }
+      final photoURL =
+          _findContentByMetaProperty(doc: doc, property: 'og:image');
+      final songsURLs = _getPlaylistSongsUrls(doc: doc);
+
+      return Playlist(
+        title: title,
+        playlistImage: photoURL,
+        description: description,
+        songs: songsURLs,
+      );
+    } catch (e) {
+      rethrow;
     }
-    final photoURL = findContentByMetaProperty(doc: doc, property: 'og:image');
-    final songsURLs =
-        findContentByMetaName(doc: doc, name: 'music:song', isSongs: true);
-
-    List<Song> songs = [];
-    for (int i = 0; i < songsURLs.length; i++) {
-      final songDoc = await getHTMLDocFromPage(uri: songsURLs[i]);
-      final song = await songFromDocument(songDoc);
-      songs.add(song);
-    }
-
-    return Playlist(
-      title: title,
-      playlistImage: photoURL,
-      description: description,
-      songs: songs,
-    );
   }
 
   //convert document to song
-  static Future<Song> songFromDocument(Document doc) async {
-    final songTitle = PlaylistParser.findContentByMetaProperty(
+  static Stream<Song> songFromUrl(String url) async* {
+    final doc = await getHTMLDocFromPage(uri: url);
+    final songTitle = PlaylistParser._findContentByMetaProperty(
         doc: doc, property: 'og:title');
-    final artist = PlaylistParser.findContentByMetaProperty(
+    final artist = PlaylistParser._findContentByMetaProperty(
             doc: doc, property: 'og:description')
         .replaceAll(RegExp(r' · Song · \d+'), '');
+    // get song duration
     final duration =
-        PlaylistParser.findContentByMetaName(doc: doc, name: 'music:duration');
+        PlaylistParser._findContentByMetaName(doc: doc, name: 'music:duration');
+    // get song album
     final Album album = await albumFromDocument(await getHTMLDocFromPage(
-      uri: PlaylistParser.findContentByMetaName(doc: doc, name: 'music:album'),
+      uri: PlaylistParser._findContentByMetaName(doc: doc, name: 'music:album'),
     ));
 
-    return Song(
+    yield Song(
         name: songTitle, artist: artist, album: album, duration: duration);
-  }
-
-  //convert document to album
-  static Future<Album> albumFromDocument(Document doc) async {
-    final title = findContentByMetaProperty(doc: doc, property: 'og:title');
-    return Album(title: title);
   }
 }
