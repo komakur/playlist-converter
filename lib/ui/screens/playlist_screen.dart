@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parse_playlist/models/playlist.dart';
 import 'package:parse_playlist/ui/widgets/song_card.dart';
+import 'package:parse_playlist/utils/playlist_parser.dart';
 
 class PlaylistScreen extends StatefulWidget {
   final Playlist playlist;
@@ -16,6 +17,7 @@ class PlaylistScreen extends StatefulWidget {
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
   List docs = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,18 +75,28 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             ]),
           ),
           Expanded(
-            flex: 2,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.playlist.songs.length,
-              itemBuilder: (context, int index) {
-                return SongCard(
-                  widget: widget,
-                  index: index,
-                );
-              },
-            ),
-          ),
+              flex: 2,
+              child: ListView.builder(
+                  itemCount: widget.playlist.songs.length,
+                  itemBuilder: (context, i) {
+                    return StreamBuilder(
+                      builder: (context, snapshot) => snapshot.hasData
+                          ? SongCard(
+                              snapshot: snapshot,
+                            )
+                          : const Center(
+                              child: SizedBox(
+                                height: 30,
+                                width: 30,
+                                child: CircularProgressIndicator(
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                      stream:
+                          PlaylistParser.songFromUrl(widget.playlist.songs[i]),
+                    );
+                  })),
         ],
       ),
     );

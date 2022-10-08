@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:parse_playlist/ui/screens/playlist_screen.dart';
 import 'package:parse_playlist/ui/widgets/song_details.dart';
 
 class SongCard extends StatelessWidget {
   const SongCard({
     Key? key,
-    required this.widget,
-    required this.index,
+    required this.snapshot,
   }) : super(key: key);
 
-  final PlaylistScreen widget;
-  final int index;
+  final AsyncSnapshot snapshot;
 
   //formatting duration to hh:mm:ss
   String formatDuration(Duration duration) {
@@ -34,6 +31,12 @@ class SongCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      decoration: const BoxDecoration(
+        border: Border.symmetric(
+          horizontal: BorderSide(width: 1.0),
+        ),
+        color: Colors.white60,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       height: MediaQuery.of(context).size.height / 10,
       child: Row(
@@ -45,24 +48,28 @@ class SongCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  widget.playlist.songs[index].name,
+                  snapshot.data.name,
                   style: const TextStyle(
                     fontSize: 20.0,
                     fontWeight: FontWeight.bold,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(widget.playlist.songs[index].artist),
+                Text(snapshot.data.artist),
               ],
             ),
           ),
-          Text(formatDuration(duration(widget.playlist.songs[index].duration))),
+          Text(
+            formatDuration(
+              duration(snapshot.data.duration),
+            ),
+          ),
           IconButton(
             onPressed: () {
               showDialog(
-                  context: context,
-                  builder: (context) =>
-                      SongDetails(widget: widget, index: index));
+                context: context,
+                builder: (context) => SongDetails(snapshot: snapshot),
+              );
             },
             icon: const Icon(Icons.more_vert_outlined),
           ),

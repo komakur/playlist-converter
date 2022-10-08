@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:parse_playlist/ui/screens/playlist_screen.dart';
 
 class SongDetails extends StatelessWidget {
   const SongDetails({
     Key? key,
-    required this.widget,
-    required this.index,
+    required this.snapshot,
   }) : super(key: key);
 
-  final PlaylistScreen widget;
-  final int index;
+  final AsyncSnapshot snapshot;
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +25,9 @@ class SongDetails extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 20.0)),
                   TextSpan(
-                      text: '\n${widget.playlist.songs[index].album.title}',
-                      style: const TextStyle(color: Colors.black87)),
+                    text: '\n${snapshot.data.album.title}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
                 ],
               ),
             )),
